@@ -1,0 +1,52 @@
+配置文件位于experiments/naic_seg_hrnet_w48_trainval_ohem_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484x2.yaml
+其中
+GPUS:指定使用的GPU
+OUTPUT_DIR：输出的模型和日志文件保存的地址
+WORKERS:数据读取的线程数
+
+请从如下地址下载模型文件，并放入 trained_model文件夹
+https://drive.google.com/file/d/1C7uhC0OVzfWnD2XcnaJT8tm_HK5LOSv5/view?usp=sharing
+
+配置测试和训练数据地址：
+测试地址文件夹结构为：
+/test/test_img_1.tif,
+      test_img_2.tif,
+      ...
+训练地址文件夹结构为：
+/train/image/
+            train_img_1.tif
+            train_img_2.tif
+      /label/
+            train_img_1.png
+            train_img_2.png
+测试：
+CUDA_VISIBLE_DEVICES=0 python ./tools/test.py --cfg ./experiments/naic_seg_hrnet_w48_trainval_ohem_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484x2.yaml
+训练：
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python -m torch.distributed.launch --nproc_per_node=6  --master_port=24322 ./tools/train.py --cfg ./experiments/naic_seg_hrnet_w48_trainval_ohem_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484x2.yaml
+压缩提交结果：
+cd ./output/NAIC/naic_seg_hrnet_w48_trainval_ohem_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484x2/
+zip -r results.zip ./results/
+
+注：
+lib.model.bn_helper.py 第10行训练时修改为：
+BatchNorm2d_class = BatchNorm2d = torch.nn.SyncBatchNorm
+测试时修改为：
+BatchNorm2d_class = BatchNorm2d = torch.nn.BatchNorm2d
+
+lib.core.criterion.py添加了FocalLoss
+
+训练部分参数：
+1 seg_hrnet_ocr.train_list 为训练的参数列表
+2 如果训练整个模型，把train.py 242-247行注释掉：
+for param in model.parameters():
+        param.requires_grad = False
+    for m in model.module.model.train_list:
+        for param in m.parameters():
+            param.requires_grad = True
+
+3,修改funct.train_model参数 train_part_model=False
+
+lib.model.bn_helper.py 第10行训练时修改为：
+BatchNorm2d_class = BatchNorm2d = torch.nn.SyncBatchNorm
+测试时修改为：
+BatchNorm2d_class = BatchNorm2d = torch.nn.BatchNorm2d

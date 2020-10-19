@@ -250,8 +250,7 @@ class ResnestOcrNet(BaseNet):
             self.ocrhead,self.auxlayer
          ]
     def forward(self, x):
-        with torch.no_grad():
-            c1,c2,c3,c4 = self.base_forward(x)
+        c1,c2,c3,c4 = self.base_forward(x)
         if self.aux:
             auxout = self.auxlayer(c3)
         out_aux_seg = [auxout]
